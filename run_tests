@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+import unittest
+from tests import all_tests
+import sys
+
+if __name__ == "__main__":
+    tests = all_tests()
+    ret = not unittest.TextTestRunner().run(tests).wasSuccessful()
+    sys.exit(ret)

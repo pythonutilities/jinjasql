@@ -1,0 +1,5 @@
+MarkupSafe<=2.0.1
+Jinja2>=2.5
+Django>=1.7,<1.8
+PyYAML>=3
+testcontainers[mysql,postgresql,mssqlserver]==3.4.2
