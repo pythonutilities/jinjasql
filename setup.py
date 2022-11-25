@@ -8,7 +8,7 @@ import os
 # There are several approaches to eliminate this redundancy,
 # see https://packaging.python.org/single_source_version/
 # but for now, we will simply maintain it in two places
-__version__ = '0.1.8'
+__version__ = '0.1.9'
 
 long_description = '''
 Generate SQL Queries using a Jinja Template, without worrying about SQL Injection
@@ -28,18 +28,18 @@ sdict = {
     'version' : __version__,
     'description' : 'Generate SQL Queries and Corresponding Bind Parameters using a Jinja2 Template',
     'long_description' : long_description,
-    'url': 'https://github.com/sripathikrishnan/jinjasql',
-    'download_url' : 'http://cloud.github.com/downloads/sripathikrishnan/jinjasql/jinjasql-%s.tar.gz' % __version__,
-    'author' : 'Sripathi Krishnan',
-    'author_email' : 'Sripathi.Krishnan@gmail.com',
-    'maintainer' : 'Sripathi Krishnan',
-    'maintainer_email' : 'Sripathi.Krishnan@gmail.com',
+    'url': 'https://github.com/pythonutilities/jinjasql',
+    'download_url' : 'http://cloud.github.com/downloads/pythonutilities/jinjasql/jinjasql-%s.tar.gz' % __version__,
+    'author' : 'Sridhar, Thomas Cherian, Sripathi Krishnan',
+    'author_email' : 'crsridhar23@gmail.com',
+    'maintainer' : 'Sridhar, Thomas Cherian',
+    'maintainer_email' : 'crsridhar23@gmail.com',
     'keywords' : ['Jinja2', 'SQL', 'Python', 'Template'],
     'license' : 'MIT',
     'packages' : ['jinjasql'],
     'test_suite' : 'tests.all_tests',
     'install_requires': [
-        'Jinja2>=2.5,<=2.11.3'
+        'Jinja2>=2.5'
     ],
     'classifiers' : [
         'Development Status :: 4 - Beta',
