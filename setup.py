@@ -8,7 +8,7 @@ import os
 # There are several approaches to eliminate this redundancy,
 # see https://packaging.python.org/single_source_version/
 # but for now, we will simply maintain it in two places
-__version__ = '0.1.9'
+__version__ = '0.1.10'
 
 long_description = '''
 Generate SQL Queries using a Jinja Template, without worrying about SQL Injection
@@ -24,24 +24,22 @@ database engine / driver you are working with.
 '''
 
 sdict = {
-    'name' : 'jinjasql',
-    'version' : __version__,
-    'description' : 'Generate SQL Queries and Corresponding Bind Parameters using a Jinja2 Template',
-    'long_description' : long_description,
+    'name': 'jinjasql',
+    'version': __version__,
+    'description': 'Generate SQL Queries and Corresponding Bind Parameters using a Jinja2 Template',
+    'long_description': long_description,
     'url': 'https://github.com/pythonutilities/jinjasql',
-    'download_url' : 'http://cloud.github.com/downloads/pythonutilities/jinjasql/jinjasql-%s.tar.gz' % __version__,
-    'author' : 'Sridhar, Thomas Cherian, Sripathi Krishnan',
-    'author_email' : 'crsridhar23@gmail.com',
-    'maintainer' : 'Sridhar, Thomas Cherian',
-    'maintainer_email' : 'crsridhar23@gmail.com',
-    'keywords' : ['Jinja2', 'SQL', 'Python', 'Template'],
-    'license' : 'MIT',
-    'packages' : ['jinjasql'],
-    'test_suite' : 'tests.all_tests',
-    'install_requires': [
-        'Jinja2>=2.5'
-    ],
-    'classifiers' : [
+    'download_url': f'http://cloud.github.com/downloads/pythonutilities/jinjasql/jinjasql-{__version__}.tar.gz',
+    'author': 'Sridhar, Thomas Cherian, Sripathi Krishnan',
+    'author_email': 'crsridhar23@gmail.com',
+    'maintainer': 'Sridhar, Thomas Cherian',
+    'maintainer_email': 'crsridhar23@gmail.com',
+    'keywords': ['Jinja2', 'SQL', 'Python', 'Template'],
+    'license': 'MIT',
+    'packages': ['jinjasql'],
+    'test_suite': 'tests.all_tests',
+    'install_requires': ['Jinja2>=2.11.3'],
+    'classifiers': [
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
@@ -50,10 +48,7 @@ sdict = {
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-    ]
+    ],
 }
 
 try:
