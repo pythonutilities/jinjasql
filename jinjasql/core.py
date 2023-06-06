@@ -116,7 +116,7 @@ def escape_postgres(tuple_or_str):
     values = (tuple_or_str, ) if not isinstance(tuple_or_str, tuple) else tuple_or_str
     def escape_double_quotes(value):
         return value.replace('"', '""')
-    return Markup('.'.join('"{}"'.format(escape_double_quotes(value)) for value in values))
+    return markupsafe.Markup('.'.join('"{}"'.format(escape_double_quotes(value)) for value in values))
 
 def bind(value, name):
     """A filter that prints %s, and stores the value 

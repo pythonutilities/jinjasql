@@ -29,9 +29,7 @@ class PostgresTest(unittest.TestCase):
             SELECT {{some_num}} = ANY({{some_array}})
         """
         query, params = j.prepare_query(template, data)
-        with self.engine.connect() as connection:
-            result = connection.execute(query, params).fetchone()
-        # result = self.engine.execute(query, params).fetchone()
+        result = self.engine.execute(query, params).fetchone()
         self.assertTrue(result[0])
     
     def test_quoted_tables(self):
@@ -44,9 +42,7 @@ class PostgresTest(unittest.TestCase):
             where table_name = 'pg_user'
         """
         query, params = j.prepare_query(template, data)
-        with self.engine.connect() as connection:
-            result = connection.execute(query, params).fetchall()
-        # result = self.engine.execute(query, params).fetchall()
+        result = self.engine.execute(query, params).fetchall()
         self.assertEqual(len(result), 1)
 
 class MySqlTest(unittest.TestCase):
@@ -65,11 +61,7 @@ class MySqlTest(unittest.TestCase):
             where table_name = 'SESSION_STATUS'
         """
         query, params = j.prepare_query(template, data)
-
-        # Get a connection from the engine and execute the query
-        with self.engine.connect() as connection:
-            result = connection.execute(query, params).fetchall()
-
+        result = self.engine.execute(query, params).fetchall()
         self.assertEqual(len(result), 1)
 
 if __name__ == '__main__':
