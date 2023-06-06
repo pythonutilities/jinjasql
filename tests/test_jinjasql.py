@@ -43,7 +43,7 @@ _DATA = {
 
 class JinjaSqlTest(unittest.TestCase):
     def setUp(self):
-        self.j = JinjaSql()
+        self.j = JinjaSql(param_style="format")
 
     def test_import(self):
         utils = """
@@ -58,7 +58,7 @@ class JinjaSqlTest(unittest.TestCase):
         loader = DictLoader({"utils.sql" : utils})
         env = Environment(loader=loader)
 
-        j = JinjaSql(env)
+        j = JinjaSql(env,param_style="format")
         query, bind_params = j.prepare_query(source, _DATA)
         expected_query = "select * from dual WHERE dummy_col = %s"
         self.assertEqual(query.strip(), expected_query.strip())
@@ -74,7 +74,7 @@ class JinjaSqlTest(unittest.TestCase):
         loader = DictLoader({"where_clause.sql" : where_clause})
         env = Environment(loader=loader)
 
-        j = JinjaSql(env)
+        j = JinjaSql(env,param_style="format")
         query, bind_params = j.prepare_query(source, _DATA)
         expected_query = "select * from dummy where project_id = %s"
         self.assertEqual(query.strip(), expected_query.strip())
@@ -83,7 +83,7 @@ class JinjaSqlTest(unittest.TestCase):
 
     def test_precompiled_template(self):
         source = "select * from dummy where project_id = {{ request.project_id }}"
-        j = JinjaSql()
+        j = JinjaSql(param_style="format")
         query, bind_params = j.prepare_query(j.env.from_string(source), _DATA)
         expected_query = "select * from dummy where project_id = %s"
         self.assertEqual(query.strip(), expected_query.strip())
@@ -92,13 +92,13 @@ class JinjaSqlTest(unittest.TestCase):
         num_of_params = 50000
         alphabets = ['A'] * num_of_params
         source = "SELECT 'x' WHERE 'A' in {{alphabets | inclause}}"
-        j = JinjaSql()
+        j = JinjaSql(param_style="format")
         query, bind_params = j.prepare_query(source, {"alphabets": alphabets})
         self.assertEqual(len(bind_params), num_of_params)
         self.assertEqual(query, "SELECT 'x' WHERE 'A' in (" + "%s," * (num_of_params - 1) + "%s)")
 
     def test_identifier_filter(self):
-        j = JinjaSql()
+        j = JinjaSql(param_style="format")
         template = 'select * from {{table_name | identifier}}'
         
         tests = [
