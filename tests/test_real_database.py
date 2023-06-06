@@ -1,3 +1,4 @@
+import os
 from testcontainers.postgres import PostgresContainer
 from testcontainers.mysql import MySqlContainer
 import sqlalchemy
@@ -14,9 +15,12 @@ class PostgresTest(unittest.TestCase):
     # b. create a sqlalchemy connection 
     # c. at the end of the test, kill the docker container
     def run(self, result=None):
-        with PostgresContainer("postgres:9.5") as postgres:
-            self.engine = sqlalchemy.create_engine(postgres.get_connection_url())
-            super(PostgresTest, self).run(result)
+        self.postgresql_test_container = PostgresContainer("postgres:15.3")
+        if os.name == "nt":
+            self.postgresql_test_container.get_container_host_ip = lambda: "localhost"
+        self.postgresql_test_container.start()
+        self.engine_test = sqlalchemy.create_engine(self.postgresql_test_container.get_connection_url())
+
 
     def test_bind_array(self):
         'It should be possible to bind arrays in a query'
