@@ -6,3 +6,5 @@ dist/
 jinjasql.egg-info/
 venv
 .idea
+pyproject.toml
+poetry.lock

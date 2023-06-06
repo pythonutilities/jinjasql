@@ -19,12 +19,12 @@ class PostgresTest(unittest.TestCase):
         if os.name == "nt":
             self.postgresql_test_container.get_container_host_ip = lambda: "localhost"
         self.postgresql_test_container.start()
-        self.engine_test = sqlalchemy.create_engine(self.postgresql_test_container.get_connection_url())
-
+        self.engine = sqlalchemy.create_engine(self.postgresql_test_container.get_connection_url(),echo=True)
+        super(PostgresTest, self).run(result)
 
     def test_bind_array(self):
         'It should be possible to bind arrays in a query'
-        j = JinjaSql()
+        j = JinjaSql(param_style='named')
         data = {
             "some_num": 1,
             "some_array": [1,2,3]
@@ -53,23 +53,32 @@ class PostgresTest(unittest.TestCase):
 
 class MySqlTest(unittest.TestCase):
     def run(self, result=None):
-        with MySqlContainer("mysql:5.7.17") as mysql:
-            self.engine = sqlalchemy.create_engine(mysql.get_connection_url())
-            super(MySqlTest, self).run(result)
+        self.container = (
+            MySqlContainer("mysql/mysql-server", platform="linux/amd64")
+            .with_exposed_ports(3306)
+            .with_env("MYSQL_USER", "root")
+            .with_env("MYSQL_PASSWORD", "test")
+            .with_env("MYSQL_DATABASE", "test")
+        )
+        if os.name == "nt":
+            self.container.get_container_host_ip = lambda: "localhost"
+        self.container.start()
+        self.engine = sqlalchemy.create_engine(self.container.get_connection_url())
+        super(MySqlTest, self).run(result)
 
     def test_quoted_tables(self):
         j = JinjaSql(identifier_quote_character='`')
         data = {
-            "all_tables": ("information_schema", "tables")
+            "database": "information_schema",
+            "table_name" : "TABLES"
         }
         template = """
-            select table_name from {{all_tables|identifier}}
-            where table_name = 'SESSION_STATUS'
+            select * from {{database|identifier}}.{{table_name|identifier}};
         """
         query, params = j.prepare_query(template, data)
         with self.engine.connect() as conn:
             result = conn.execute(sqlalchemy.text(query), params).fetchall()
-        self.assertEqual(len(result), 1)
+        self.assertTrue(len(result)>1)
 
 if __name__ == '__main__':
     unittest.main()

@@ -194,12 +194,14 @@ class JinjaSql(object):
     # asyncpg "where name = $1"
     VALID_PARAM_STYLES = ('qmark', 'numeric', 'named', 'format', 'pyformat', 'asyncpg')
     VALID_ID_QUOTE_CHARS = ('`', '"')
-    def __init__(self, env=None, param_style='format', db_engine='postgres', identifier_quote_character='"'):
+    def __init__(self, env=None, param_style='named', db_engine='postgres', identifier_quote_character='"'):
         # self.env = env or Environment()
         # self._prepare_environment()
         self.param_style = param_style
         if identifier_quote_character not in self.VALID_ID_QUOTE_CHARS:
-            raise ValueError("identifier_quote_characters must be one of " + JinjaSql.VALID_ID_QUOTE_CHARS)
+            raise ValueError(
+                f"identifier_quote_characters must be one of {JinjaSql.VALID_ID_QUOTE_CHARS}"
+            )
         self.identifier_quote_character = identifier_quote_character
         self.db_engine = db_engine
         self.env = env or Environment()
@@ -208,7 +210,6 @@ class JinjaSql(object):
     def _prepare_environment(self):
         self.env.autoescape = True
         self.env.add_extension(SqlExtension)
-        # self.env.add_extension('jinja2.ext.autoescape')
         self.env.filters["bind"] = bind
         self.env.filters["sqlsafe"] = sql_safe
         self.env.filters["inclause"] = bind_in_clause
@@ -233,7 +234,7 @@ class JinjaSql(object):
             if self.param_style in ('named', 'pyformat'):
                 bind_params = dict(bind_params)
             elif self.param_style in ('qmark', 'numeric', 'format', 'asyncpg'):
-                bind_params = list(bind_params.values())
+                bind_params = tuple(bind_params.values())
             return query, bind_params
         finally:
             del _thread_local.bind_params
