@@ -209,18 +209,12 @@ select "col1", "col2" from "a_schema"."a_table"
 
 Pre-Requisites : 
 
-1. python 2.7.x, 3.4.x or 3.5.x
-2. jinja2 >= version 2.5
-
-To install from PyPI (recommended) :
-
-    pip install jinjasql
+1. python > 3.5 
+2. jinja2 >= version 3.x
     
 To install from source : 
 
-    git clone https://github.com/hashedin/jinjasql
-    cd jinjasql
-    sudo python setup.py install
+    pip install git+https://github.com/pythonutilities/jinjasql
 
 ## How does JinjaSQL work? ##
 
