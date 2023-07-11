@@ -44,7 +44,7 @@ class SqlExtension(Extension):
             else:
                 break
         if not name:
-            name = "bind#0"
+            name = "bind0"
         return name
 
     def filter_stream(self, stream):
