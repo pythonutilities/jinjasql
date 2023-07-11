@@ -97,6 +97,13 @@ class JinjaSqlTest(unittest.TestCase):
         self.assertEqual(len(bind_params), num_of_params)
         self.assertEqual(query, "SELECT 'x' WHERE 'A' in (" + "%s," * (num_of_params - 1) + "%s)")
 
+    def test_large_likeclause(self):
+        source = "SELECT 'x' WHERE project_id ilike {{('%%'~request.project_id~'%%')}}"
+        j = JinjaSql(param_style="named")
+        query, bind_params = j.prepare_query(source, _DATA)
+        self.assertEqual(len(bind_params), 1)
+        self.assertEqual(query, "SELECT 'x' WHERE project_id ilike :bind0_1")
+
     def test_identifier_filter(self):
         j = JinjaSql(param_style="format")
         template = 'select * from {{table_name | identifier}}'
