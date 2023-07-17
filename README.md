@@ -1,8 +1,8 @@
-This is a forked version of [jinjasql](https://github.com/sripathikrishnan/jinjasql) which includes some custom features.
+This is a forked version of [jinjasql](https://github.com/sripathikrishnan/jinjasql)
 
 # Generate SQL Queries using a Jinja Template, without worrying about SQL Injection #
 
-[![Travis Build Status](https://travis-ci.org/hashedin/jinjasql.svg?branch=master)](https://travis-ci.org/hashedin/jinjasql)  [![Github Actions Build Status](https://github.com/hashedin/jinjasql/workflows/Tests/badge.svg)](https://github.com/hashedin/jinjasql/actions)
+[![Github Actions Build Status](https://github.com/pythonutilities/jinjasql/workflows/Tests/badge.svg)](https://github.com/pythonutilities/jinjasql/actions)
 
 JinjaSQL is a template language for SQL statements and scripts. 
 Since it's based in [Jinja2](http://jinja.pocoo.org/), 
