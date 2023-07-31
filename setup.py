@@ -24,7 +24,7 @@ database engine / driver you are working with.
 '''
 
 sdict = {
-    'name': 'jinjasql',
+    'name': 'jinjasql2',
     'version': __version__,
     'description': 'Generate SQL Queries and Corresponding Bind Parameters using a Jinja2 Template',
     'long_description': long_description,

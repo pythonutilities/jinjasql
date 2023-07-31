@@ -212,9 +212,9 @@ Pre-Requisites :
 1. python > 3.5 
 2. jinja2 >= version 3.x
     
-To install from source : 
+To install from PyPi(recommended) : 
 
-    pip install git+https://github.com/pythonutilities/jinjasql
+    pip install jinjasql2
 
 ## How does JinjaSQL work? ##
 
