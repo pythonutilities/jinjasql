@@ -140,10 +140,10 @@ Per [PEP-249](https://www.python.org/dev/peps/pep-0249/), bind parameters can be
 You can pass the optional constructor argument `param_style` to control
 the style of query parameter.
 
-1. **format** : `... where name = %s`. This is the default
+1. **format** : `... where name = %s`
 1. **qmark** :  `where name = ?`
 1. **numeric** : `where name = :1 and last_name = :2`
-1. **named** : `where name = :name and last_name = :last_name`
+1. **named** : `where name = :name and last_name = :last_name`. This is the default.
 1. **pyformat** : `where name = %(name)s and last_name = %(last_name)s`
 1. **asyncpg** : `where name = $1 and last_name = $2`. This is not part of PEP-249 standard, but is used by [asyncpg library for postgres](https://magicstack.github.io/asyncpg/current/usage.html)
 
