@@ -8,7 +8,7 @@ import os
 # There are several approaches to eliminate this redundancy,
 # see https://packaging.python.org/single_source_version/
 # but for now, we will simply maintain it in two places
-__version__ = '0.1.11'
+__version__ = '0.1.12'
 
 long_description = '''
 Generate SQL Queries using a Jinja Template, without worrying about SQL Injection
@@ -30,9 +30,9 @@ sdict = {
     'long_description': long_description,
     'url': 'https://github.com/pythonutilities/jinjasql',
     'download_url': f'http://cloud.github.com/downloads/pythonutilities/jinjasql/jinjasql-{__version__}.tar.gz',
-    'author': 'Sridhar, Thomas Cherian, Sripathi Krishnan',
+    'author': 'Sridhar, Thomas Ashish Cherian, Sripathi Krishnan',
     'author_email': 'crsridhar23@gmail.com',
-    'maintainer': 'Sridhar, Thomas Cherian',
+    'maintainer': 'Sridhar, Thomas Ashish Cherian',
     'maintainer_email': 'crsridhar23@gmail.com',
     'keywords': ['Jinja2', 'SQL', 'Python', 'Template'],
     'license': 'MIT',
