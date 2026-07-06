@@ -101,9 +101,9 @@ template: >
     {{ OPTIONAL_AND(request.unknown_column,
         "some_column = ", request.unknown_column) -}}
     AND fixed_column = {{session.user_id}}
-expected_params: 
+expected_params:
     as_list: [123, 'sripathi']
-    as_dict: {"request.project_id": 123, "session.user_id": u'sripathi'}
+    as_dict: {"value_1": 123, "session_user_id_2": 'sripathi'}
 expected_sql:
     format: >
         SELECT 'x' from dual
@@ -111,6 +111,12 @@ expected_sql:
         AND project_id = %s
 
         AND fixed_column = %s
+    named: >
+        SELECT 'x' from dual
+        WHERE 1=1
+        AND project_id = :value_1
+
+        AND fixed_column = :session_user_id_2
     qmark: >
         SELECT 'x' from dual
         WHERE 1=1
@@ -150,6 +156,7 @@ template: >
     VALUES({{request.project}})
 expected_sql:
     format: INSERT INTO projects (info) VALUES(%s)
+    named: INSERT INTO projects (info) VALUES(:request_project_1)
 expected_params:
     as_list: [{"id": 123, "name": "Acme Project"}]
-    as_dict: {"request.project": {"id": 123, "name": "Acme Project"}}
+    as_dict: {"request_project_1": {"id": 123, "name": "Acme Project"}}
