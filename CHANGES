@@ -1,1 +1,5 @@
-See https://github.com/sripathikrishnan/jinjasql/releases
+For releases of this fork (jinjasql2 on PyPI), see
+https://github.com/pythonutilities/jinjasql/releases
+
+For releases of the original jinjasql package this project was forked from,
+see https://github.com/sripathikrishnan/jinjasql/releases

@@ -1,5 +1,4 @@
-Please use
- python setup.py install
+To install from PyPI (recommended):
+ pip install jinjasql2
 
-To report errors, create a new issue on Github - https://github.com/sripathikrishnan/jinjasql/issues
-
+To report errors, create a new issue on Github - https://github.com/pythonutilities/jinjasql/issues
