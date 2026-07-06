@@ -85,7 +85,10 @@ class MySqlTest(unittest.TestCase):
             self.container.get_container_host_ip = lambda: "localhost"
         self.container.start()
         self.addCleanup(self.container.stop)
-        self.engine = sqlalchemy.create_engine(self.container.get_connection_url())
+        url = self.container.get_connection_url()
+        if url.startswith("mysql://"):
+            url = url.replace("mysql://", "mysql+pymysql://", 1)
+        self.engine = sqlalchemy.create_engine(url)
 
     def test_quoted_tables(self):
         j = JinjaSql(identifier_quote_character='`')
