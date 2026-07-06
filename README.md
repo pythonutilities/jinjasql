@@ -2,7 +2,8 @@ This is a forked version of [jinjasql](https://github.com/sripathikrishnan/jinja
 
 # Generate SQL Queries using a Jinja Template, without worrying about SQL Injection #
 
-[![Github Actions Build Status](https://github.com/pythonutilities/jinjasql/workflows/Tests/badge.svg)](https://github.com/pythonutilities/jinjasql/actions)
+[![PyPI version](https://img.shields.io/pypi/v/jinjasql2.svg)](https://pypi.org/project/jinjasql2/)
+[![Tests](https://github.com/pythonutilities/jinjasql/actions/workflows/workflow.yml/badge.svg)](https://github.com/pythonutilities/jinjasql/actions/workflows/workflow.yml)
 
 JinjaSQL is a template language for SQL statements and scripts.
 Since it's based in [Jinja2](https://jinja.palletsprojects.com/),
