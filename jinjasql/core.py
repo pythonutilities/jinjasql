@@ -1,25 +1,13 @@
-from __future__ import unicode_literals
 from jinja2 import Environment
 from jinja2 import Template
 from jinja2.ext import Extension
 from jinja2.lexer import Token
 from jinja2.utils import markupsafe
 from collections.abc import Iterable
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    # For Python 2.6 and less
-    from ordereddict import OrderedDict
-
+from collections import OrderedDict
 from threading import local
-from random import Random
 
 _thread_local = local()
-
-# This is mocked in unit tests for deterministic behaviour
-random = Random()
-
 
 class JinjaSqlException(Exception):
     pass
@@ -40,7 +28,10 @@ class SqlExtension(Extension):
             elif token.test("name"):
                 name += token.value
             elif token.test("dot"):
-                name += token.value
+                # underscore, not a literal dot: these names become
+                # bind-parameter names in named/pyformat styles, and
+                # dots are invalid there (e.g. sqlite/Oracle ":a.b_1")
+                name += "_"
             else:
                 break
         if not name:
@@ -49,18 +40,18 @@ class SqlExtension(Extension):
 
     def filter_stream(self, stream):
         """
-        We convert 
+        We convert
         {{ some.variable | filter1 | filter 2}}
-            to 
+            to
         {{ ( some.variable | filter1 | filter 2 ) | bind}}
-        
+
         ... for all variable declarations in the template
 
         Note the extra ( and ). We want the | bind to apply to the entire value, not just the last value.
         The parentheses are mostly redundant, except in expressions like {{ '%' ~ myval ~ '%' }}
 
-        This function is called by jinja2 immediately 
-        after the lexing stage, but before the parser is called. 
+        This function is called by jinja2 immediately
+        after the lexing stage, but before the parser is called.
         """
         while not stream.eos:
             token = next(stream)
@@ -73,18 +64,26 @@ class SqlExtension(Extension):
 
                 last_token = var_expr[-1]
                 lineno = last_token.lineno
-                # don't bind twice
-                if (not last_token.test("name") 
-                    or not last_token.value in ('bind', 'inclause', 'sqlsafe')):
+                # don't bind twice: skip only when the expression already
+                # ends with an explicit | bind / | inclause / | sqlsafe
+                # filter. The pipe check matters - a plain variable that
+                # merely happens to be named "sqlsafe" must still be bound.
+                already_filtered = (
+                    len(var_expr) > 2
+                    and var_expr[-2].test("pipe")
+                    and last_token.test("name")
+                    and last_token.value in ('bind', 'inclause', 'sqlsafe')
+                )
+                if not already_filtered:
                     param_name = self.extract_param_name(var_expr)
 
-                    var_expr.insert(1, Token(lineno, 'lparen', u'('))
-                    var_expr.append(Token(lineno, 'rparen', u')'))
-                    var_expr.append(Token(lineno, 'pipe', u'|'))
-                    var_expr.append(Token(lineno, 'name', u'bind'))
-                    var_expr.append(Token(lineno, 'lparen', u'('))
+                    var_expr.insert(1, Token(lineno, 'lparen', '('))
+                    var_expr.append(Token(lineno, 'rparen', ')'))
+                    var_expr.append(Token(lineno, 'pipe', '|'))
+                    var_expr.append(Token(lineno, 'name', 'bind'))
+                    var_expr.append(Token(lineno, 'lparen', '('))
                     var_expr.append(Token(lineno, 'string', param_name))
-                    var_expr.append(Token(lineno, 'rparen', u')'))
+                    var_expr.append(Token(lineno, 'rparen', ')'))
 
                 var_expr.append(variable_end)
                 for token in var_expr:
@@ -97,32 +96,11 @@ def sql_safe(value):
     in a SQL statement"""
     return markupsafe.Markup(value)
 
-def identifier(value):
-    """A filter that escapes a SQL identifier, usually database objects
-    such as tables or fields"""
-    available = {
-        'postgres': escape_postgres,
-    }
-    try:
-        return available[_thread_local.db_engine](value)
-    except KeyError:
-        raise ValueError(
-            'Supported db_engine values are: {}'.format(
-                ", ".join(available.keys())
-            )
-        )
-
-def escape_postgres(tuple_or_str):
-    values = (tuple_or_str, ) if not isinstance(tuple_or_str, tuple) else tuple_or_str
-    def escape_double_quotes(value):
-        return value.replace('"', '""')
-    return markupsafe.Markup('.'.join('"{}"'.format(escape_double_quotes(value)) for value in values))
-
-def bind(value, name):
-    """A filter that prints %s, and stores the value 
+def bind(value, name="bind0"):
+    """A filter that prints %s, and stores the value
     in an array, so that it can be bound using a prepared statement
 
-    This filter is automatically applied to every {{variable}} 
+    This filter is automatically applied to every {{variable}}
     during the lexing stage, so developers can't forget to bind
     """
     if isinstance(value, markupsafe.Markup):
@@ -131,7 +109,15 @@ def bind(value, name):
         return _bind_param(_thread_local.bind_params, name, value)
 
 def bind_in_clause(value):
+    if isinstance(value, str):
+        raise ValueError(
+            "inclause filter expects a list or tuple of values, got a string"
+        )
     values = list(value)
+    if not values:
+        raise ValueError(
+            "Cannot bind an empty sequence to an in clause"
+        )
     results = []
     for v in values:
         results.append(_bind_param(_thread_local.bind_params, "inclause", v))
@@ -163,6 +149,12 @@ def _bind_param(already_bound, key, value):
 
 def build_escape_identifier_filter(identifier_quote_character):
     def quote_and_escape(value):
+        if not isinstance(value, str):
+            raise ValueError(
+                "identifier filter expects string identifiers, got %r" % (value,)
+            )
+        if "\x00" in value:
+            raise ValueError("identifier must not contain NUL characters")
         # Escape double quote with 2 double quotes,
         # or escape backtick with 2 backticks
         return identifier_quote_character + \
@@ -178,12 +170,6 @@ def build_escape_identifier_filter(identifier_quote_character):
 
     return identifier_filter
 
-def requires_in_clause(obj):
-    return isinstance(obj, (list, tuple))
-
-def is_dictionary(obj):
-    return isinstance(obj, dict)
-
 class JinjaSql(object):
     # See PEP-249 for definition
     # qmark "where name = ?"
@@ -195,8 +181,10 @@ class JinjaSql(object):
     VALID_PARAM_STYLES = ('qmark', 'numeric', 'named', 'format', 'pyformat', 'asyncpg')
     VALID_ID_QUOTE_CHARS = ('`', '"')
     def __init__(self, env=None, param_style='named', db_engine='postgres', identifier_quote_character='"'):
-        # self.env = env or Environment()
-        # self._prepare_environment()
+        if param_style not in self.VALID_PARAM_STYLES:
+            raise ValueError(
+                f"param_style must be one of {JinjaSql.VALID_PARAM_STYLES}"
+            )
         self.param_style = param_style
         if identifier_quote_character not in self.VALID_ID_QUOTE_CHARS:
             raise ValueError(
@@ -228,7 +216,6 @@ class JinjaSql(object):
             _thread_local.bind_params = OrderedDict()
             _thread_local.param_style = self.param_style
             _thread_local.param_index = 0
-            _thread_local.db_engine = self.db_engine
             query = template.render(data)
             bind_params = _thread_local.bind_params
             if self.param_style in ('named', 'pyformat'):
@@ -240,4 +227,3 @@ class JinjaSql(object):
             del _thread_local.bind_params
             del _thread_local.param_style
             del _thread_local.param_index
-            del _thread_local.db_engine
