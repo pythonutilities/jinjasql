@@ -37,7 +37,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: pypi
+      name: release
       url: https://pypi.org/p/jinjasql2
     permissions:
       id-token: write   # REQUIRED for trusted publishing (OIDC) — no API token needed
