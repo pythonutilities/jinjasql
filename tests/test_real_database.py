@@ -1,26 +1,44 @@
 import os
-from testcontainers.postgres import PostgresContainer
-from testcontainers.mysql import MySqlContainer
-import sqlalchemy
 import unittest
+
 from jinjasql import JinjaSql
 
+try:
+    import sqlalchemy
+    from testcontainers.postgres import PostgresContainer
+    from testcontainers.mysql import MySqlContainer
+    HAVE_TEST_DEPS = True
+except ImportError:
+    HAVE_TEST_DEPS = False
+
+
+def _docker_available():
+    if not HAVE_TEST_DEPS:
+        return False
+    try:
+        import docker
+        docker.from_env().ping()
+        return True
+    except Exception:
+        return False
+
+
+requires_docker = unittest.skipUnless(
+    _docker_available(),
+    "requires testcontainers, sqlalchemy and a running Docker daemon",
+)
+
+
+@requires_docker
 class PostgresTest(unittest.TestCase):
 
-    # Core idea inspired from 
-    # https://stackoverflow.com/questions/8416208/in-python-is-there-a-good-idiom-for-using-context-managers-in-setup-teardown
-    # 
-    # Override the run method to automatically
-    # a. launch a postgres docker container
-    # b. create a sqlalchemy connection 
-    # c. at the end of the test, kill the docker container
-    def run(self, result=None):
-        self.postgresql_test_container = PostgresContainer("postgres:15.3")
+    def setUp(self):
+        self.container = PostgresContainer("postgres:15.3")
         if os.name == "nt":
-            self.postgresql_test_container.get_container_host_ip = lambda: "localhost"
-        self.postgresql_test_container.start()
-        self.engine = sqlalchemy.create_engine(self.postgresql_test_container.get_connection_url(),echo=True)
-        super(PostgresTest, self).run(result)
+            self.container.get_container_host_ip = lambda: "localhost"
+        self.container.start()
+        self.addCleanup(self.container.stop)
+        self.engine = sqlalchemy.create_engine(self.container.get_connection_url())
 
     def test_bind_array(self):
         'It should be possible to bind arrays in a query'
@@ -36,7 +54,7 @@ class PostgresTest(unittest.TestCase):
         with self.engine.connect() as conn:
             result = conn.execute(sqlalchemy.text(query), params).fetchone()
         self.assertTrue(result[0])
-    
+
     def test_quoted_tables(self):
         j = JinjaSql()
         data = {
@@ -51,8 +69,11 @@ class PostgresTest(unittest.TestCase):
             result = conn.execute(sqlalchemy.text(query), params).fetchall()
         self.assertEqual(len(result), 1)
 
+
+@requires_docker
 class MySqlTest(unittest.TestCase):
-    def run(self, result=None):
+
+    def setUp(self):
         self.container = (
             MySqlContainer("mysql/mysql-server", platform="linux/amd64")
             .with_exposed_ports(3306)
@@ -63,8 +84,11 @@ class MySqlTest(unittest.TestCase):
         if os.name == "nt":
             self.container.get_container_host_ip = lambda: "localhost"
         self.container.start()
-        self.engine = sqlalchemy.create_engine(self.container.get_connection_url())
-        super(MySqlTest, self).run(result)
+        self.addCleanup(self.container.stop)
+        url = self.container.get_connection_url()
+        if url.startswith("mysql://"):
+            url = url.replace("mysql://", "mysql+pymysql://", 1)
+        self.engine = sqlalchemy.create_engine(url)
 
     def test_quoted_tables(self):
         j = JinjaSql(identifier_quote_character='`')
@@ -79,6 +103,7 @@ class MySqlTest(unittest.TestCase):
         with self.engine.connect() as conn:
             result = conn.execute(sqlalchemy.text(query), params).fetchall()
         self.assertTrue(len(result)>1)
+
 
 if __name__ == '__main__':
     unittest.main()

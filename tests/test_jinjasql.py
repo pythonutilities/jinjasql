@@ -1,9 +1,8 @@
-from __future__ import unicode_literals
+import sqlite3
 import unittest
 from jinja2 import DictLoader
 from jinja2 import Environment
 from jinjasql import JinjaSql
-from jinjasql.core import InvalidBindParameterException
 from datetime import date
 from yaml import safe_load_all
 from os.path import dirname, abspath, join
@@ -119,6 +118,75 @@ class JinjaSqlTest(unittest.TestCase):
             self.assertEqual(query, test[1])
 
 
+    def test_list_as_first_dynamic_parameter(self):
+        # Regression test for
+        # https://github.com/pythonutilities/jinjasql/issues/13
+        query, bind_params = self.j.prepare_query(
+            "select * from t where a in {{ ids | inclause }} and b = {{ x }}",
+            {"ids": [1, 2, 3], "x": 9})
+        self.assertEqual(query, "select * from t where a in (%s,%s,%s) and b = %s")
+        self.assertEqual(list(bind_params), [1, 2, 3, 9])
+
+    def test_nested_reference_generates_valid_named_param(self):
+        # Dots in auto-generated bind names are invalid in named style
+        # (sqlite/Oracle): {{ request.project_id }} must not produce
+        # the placeholder ":request.project_id_1"
+        j = JinjaSql(param_style="named")
+        query, bind_params = j.prepare_query(
+            "select * from t where project_id = {{ request.project_id }}", _DATA)
+        self.assertEqual(query, "select * from t where project_id = :request_project_id_1")
+        self.assertEqual(bind_params, {"request_project_id_1": 123})
+
+    def test_named_params_execute_on_sqlite(self):
+        j = JinjaSql(param_style="named")
+        query, bind_params = j.prepare_query(
+            "select {{ request.project_id }} where 1 in {{ request.days_count | inclause }}",
+            {"request": {"project_id": 123, "days_count": [1, 2]}})
+        conn = sqlite3.connect(":memory:")
+        try:
+            self.assertEqual(conn.execute(query, bind_params).fetchall(), [(123,)])
+        finally:
+            conn.close()
+
+    def test_invalid_param_style_rejected(self):
+        with self.assertRaises(ValueError):
+            JinjaSql(param_style="fromat")
+
+    def test_variable_named_like_filter_is_bound(self):
+        # A variable that merely shares a name with one of our filters
+        # must still be bound, not rendered raw
+        query, bind_params = self.j.prepare_query(
+            "select * from dual where x = {{ sqlsafe }}",
+            {"sqlsafe": "1; drop table users; --"})
+        self.assertEqual(query, "select * from dual where x = %s")
+        self.assertEqual(list(bind_params), ["1; drop table users; --"])
+
+    def test_manual_bind_filter(self):
+        query, bind_params = self.j.prepare_query(
+            "select * from user where id = {{ userid | bind }}",
+            {"userid": 143})
+        self.assertEqual(query, "select * from user where id = %s")
+        self.assertEqual(list(bind_params), [143])
+
+    def test_empty_inclause_raises(self):
+        with self.assertRaises(ValueError):
+            self.j.prepare_query(
+                "select 'x' where day in {{ days | inclause }}",
+                {"days": []})
+
+    def test_string_inclause_raises(self):
+        with self.assertRaises(ValueError):
+            self.j.prepare_query(
+                "select 'x' where day in {{ day | inclause }}",
+                {"day": "mon"})
+
+    def test_identifier_filter_rejects_bad_input(self):
+        for bad_identifier in (123, ("users", 123), "a\x00b"):
+            with self.assertRaises(ValueError):
+                self.j.prepare_query(
+                    "select * from {{ table_name | identifier }}",
+                    {"table_name": bad_identifier})
+
     def test_identifier_filter_backtick(self):
         j = JinjaSql(identifier_quote_character='`')
         template = 'select * from {{table_name | identifier}}'
@@ -148,10 +216,9 @@ def _generate_test(config):
 
             if 'expected_params' in config:
                 if param_style in ('pyformat', 'named'):
-                    expected_params = config['expected_params']['as_dict']
+                    self.assertEqual(bind_params, config['expected_params']['as_dict'])
                 else:
-                    expected_params = config['expected_params']['as_list']
-                self.assertEqual(list(bind_params), expected_params)
+                    self.assertEqual(list(bind_params), config['expected_params']['as_list'])
 
             self.assertEqual(query.strip(), expected_sql.strip())
 
